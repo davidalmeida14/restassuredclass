@@ -6,6 +6,11 @@ import static io.restassured.RestAssured.basePath;
 import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
@@ -173,4 +178,56 @@ public class ReqResExample {
 			
 	}
 	
+	@Test
+	public void dadoRequestPATCH_deveRetornar200ComDadoAtualizado() {
+		
+		Integer idUsuario = 2;
+		basePath = PATH_USERS_ID.getValor();
+		
+		PessoaRequest request = new PessoaRequest("Mauricio", "Auxiliar Administrativo");
+		
+		String pathToSchemaInClasspath = "Schemas/patchUserResponse.json";
+		
+		PessoaResponseUpdate as = given()
+			.accept(ContentType.JSON)
+			.contentType(ContentType.JSON)
+			.pathParam("id", idUsuario)
+			.log().all()
+		.when()
+			.body(request)
+			.patch()
+		.then()
+			.statusCode(HttpStatus.SC_OK)
+			.body(JsonSchemaValidator.matchesJsonSchemaInClasspath(pathToSchemaInClasspath))
+			.extract()
+			.response()
+			.as(PessoaResponseUpdate.class);
+			
+			
+		assertEquals(as.getName(), request.getName());
+		assertEquals(as.getJob(), request.getJob());
+		assertThat(obterData(as.getUpdatedAt()).toString(), equalTo(LocalDate.now().toString()));
+		
+	}
+
+	private LocalDate obterData(String data) {
+		
+		LocalDateTime date = null;
+		
+		try{ 
+			date = LocalDateTime.parse(data.replace("Z", ""));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		LocalDate datedata = null;
+		try {
+			datedata = date.toLocalDate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		 
+		System.out.println(datedata.toString());
+		return datedata;
+	}
 }
